@@ -1,10 +1,10 @@
 {
-  "name": "Kiwi Idle – Clicker Game",
+  "name": "Kiwi Idle",
   "short_name": "Kiwi Idle",
-  "start_url": ".",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#1b1b1b",
-  "theme_color": "#2ecc71",
+  "background_color": "#0f172a",
+  "theme_color": "#22c55e",
   "icons": [
     {
       "src": "icon-192.png",
