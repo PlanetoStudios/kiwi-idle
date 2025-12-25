@@ -2,63 +2,125 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Kiwi Idle</title>
-
-<!-- PWA -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2ecc71">
-
-<!-- iOS -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Kiwi Idle">
-<link rel="apple-touch-icon" href="icon-192.png">
 
 <style>
 body {
-  margin: 0;
-  background: #1b1b1b;
-  color: white;
-  font-family: Arial, sans-serif;
+  font-family: system-ui, Arial;
+  background: #0f172a;
+  color: #e5e7eb;
   text-align: center;
+  padding: 30px;
 }
+
 button {
-  padding: 16px;
-  font-size: 18px;
+  background: #22c55e;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 20px;
+  font-size: 16px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+button:active {
+  transform: scale(0.96);
 }
 </style>
 </head>
 
 <body>
+
 <h1>🥝 Kiwi Idle</h1>
-<p id="score">0</p>
-<button onclick="clickKiwi()">Clique no Kiwi</button>
+
+<div id="kiwis">0 kiwis</div>
+<div id="perSecond">0 / segundo</div>
+
+<button id="click">Clique no Kiwi</button>
+
+<h2>Upgrade</h2>
+<button id="upgrade">
++1 Kiwi/s<br>
+Custo: <span id="cost">10</span>
+</button>
 
 <script>
-let kiwi = Number(localStorage.getItem("kiwi")) || 0;
+let kiwis = 0;
+let perSecond = 0;
+let upgradeCost = 10;
 
-function clickKiwi(){
-  kiwi++;
-  save();
-  render();
+// UI
+const kiwisEl = document.getElementById("kiwis");
+const perSecondEl = document.getElementById("perSecond");
+const costEl = document.getElementById("cost");
+
+function updateUI() {
+  kiwisEl.textContent = Math.floor(kiwis) + " kiwis";
+  perSecondEl.textContent = perSecond + " / segundo";
+  costEl.textContent = upgradeCost;
 }
 
-function render(){
-  document.getElementById("score").innerText = kiwi + " 🥝";
+// Clique
+document.getElementById("click").onclick = () => {
+  kiwis++;
+  updateUI();
+};
+
+// Upgrade
+document.getElementById("upgrade").onclick = () => {
+  if (kiwis >= upgradeCost) {
+    kiwis -= upgradeCost;
+    perSecond++;
+    upgradeCost = Math.floor(upgradeCost * 1.6);
+    saveGame();
+    updateUI();
+  }
+};
+
+// Produção automática
+setInterval(() => {
+  kiwis += perSecond;
+  updateUI();
+}, 1000);
+
+// Salvar
+function saveGame() {
+  localStorage.setItem("kiwiSave", JSON.stringify({
+    kiwis,
+    perSecond,
+    upgradeCost,
+    lastTime: Date.now()
+  }));
 }
 
-function save(){
-  localStorage.setItem("kiwi", kiwi);
+// Carregar + offline
+function loadGame() {
+  const save = JSON.parse(localStorage.getItem("kiwiSave"));
+  if (!save) return;
+
+  kiwis = save.kiwis;
+  perSecond = save.perSecond;
+  upgradeCost = save.upgradeCost;
+
+  const diff = Math.floor((Date.now() - save.lastTime) / 1000);
+  kiwis += diff * perSecond;
 }
 
-render();
+window.onload = () => {
+  loadGame();
+  updateUI();
+};
+
+// Auto-save
+setInterval(saveGame, 5000);
 
 // Service Worker
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
 </script>
+
 </body>
 </html>
