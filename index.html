@@ -7,182 +7,246 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
-body {
-  margin: 0;
-  font-family: system-ui, Arial;
-  background: linear-gradient(135deg, #052e16, #14532d, #022c22);
-  background-size: 300% 300%;
-  animation: bg 12s ease infinite;
-  color: #ecfdf5;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
+/* ================= VISUAL ================= */
+:root{
+  --green:#22c55e;
+  --dark:#020617;
+  --panel:rgba(15,23,42,.85);
 }
 
-@keyframes bg {
-  0% {background-position: 0% 50%;}
-  50% {background-position: 100% 50%;}
-  100% {background-position: 0% 50%;}
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:system-ui,Arial;
+  background:
+    radial-gradient(circle at top,#16a34a,#022c22 70%);
+  color:#ecfdf5;
+  display:flex;
+  justify-content:center;
+  align-items:center;
 }
 
-.game {
-  width: 320px;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 0 40px rgba(34,197,94,.4);
+.app{
+  width:360px;
+  background:var(--panel);
+  border-radius:24px;
+  padding:18px;
+  box-shadow:0 0 60px rgba(34,197,94,.4);
 }
 
-h1 {
-  margin-top: 0;
+h1{
+  margin:0 0 10px;
+  text-align:center;
 }
 
-.counter {
-  font-size: 28px;
-  margin: 10px 0;
+.stat{
+  text-align:center;
+  margin:6px 0;
+  font-size:22px;
 }
 
-.persec {
-  opacity: .8;
-  margin-bottom: 15px;
+.small{
+  opacity:.7;
+  font-size:14px;
 }
 
-button {
-  width: 100%;
-  padding: 14px;
-  margin: 8px 0;
-  border-radius: 14px;
-  border: none;
-  font-size: 16px;
-  background: linear-gradient(135deg, #22c55e, #4ade80);
-  color: #052e16;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform .1s, box-shadow .1s;
+button{
+  width:100%;
+  border:none;
+  border-radius:16px;
+  padding:14px;
+  margin:6px 0;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  background:linear-gradient(135deg,#22c55e,#4ade80);
+  color:#022c22;
 }
 
-button:active {
-  transform: scale(.96);
-  box-shadow: 0 0 20px #22c55e;
+button:active{transform:scale(.96)}
+
+.section{
+  margin-top:14px;
+  padding-top:10px;
+  border-top:1px solid rgba(255,255,255,.1);
 }
 
-.section {
-  margin-top: 20px;
-  border-top: 1px solid rgba(255,255,255,.1);
-  padding-top: 15px;
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+
+.achievement{
+  background:rgba(255,255,255,.08);
+  padding:8px;
+  border-radius:10px;
+  font-size:12px;
+}
+
+.locked{opacity:.4}
+
+/* calculadora */
+.calc{
+  background:rgba(0,0,0,.4);
+  padding:10px;
+  border-radius:12px;
+  font-size:13px;
+  margin-top:6px;
 }
 </style>
 </head>
 
 <body>
+<div class="app">
 
-<div class="game">
-  <h1>🥝 Kiwi Idle</h1>
+<h1>🥝 Kiwi Idle</h1>
 
-  <div class="counter" id="kiwis">0 kiwis</div>
-  <div class="persec" id="ps">0 / segundo</div>
+<div class="stat" id="kiwis">0 kiwis</div>
+<div class="stat small" id="ps">0 / segundo</div>
 
-  <button id="click">Clique no Kiwi</button>
+<button id="click">CLICAR NO KIWI</button>
 
-  <div class="section">
-    <button id="upgrade1">🌱 Plantação (+1/s)<br>Custo: <span id="c1">10</span></button>
-    <button id="upgrade2">🏭 Fábrica (+5/s)<br>Custo: <span id="c2">100</span></button>
-    <button id="upgrade3">🚀 Exportação (+25/s)<br>Custo: <span id="c3">1000</span></button>
-  </div>
+<div class="section">
+  <strong>Produção</strong>
+  <button onclick="buy(0)">🌱 Plantação (+1/s)<br>Custo: <span id="c0"></span></button>
+  <button onclick="buy(1)">🏭 Fábrica (+5/s)<br>Custo: <span id="c1"></span></button>
+  <button onclick="buy(2)">🚢 Exportação (+25/s)<br>Custo: <span id="c2"></span></button>
+</div>
 
-  <div class="section">
-    <button id="prestige">✨ Prestígio<br>Bônus: <span id="bonus">1.0x</span></button>
-  </div>
+<div class="section">
+  <strong>Calculadora</strong>
+  <div class="calc" id="calc"></div>
+</div>
+
+<div class="section">
+  <strong>Prestígio</strong>
+  <button onclick="prestige()">✨ Resetar para bônus permanente</button>
+</div>
+
+<div class="section">
+  <strong>Conquistas</strong>
+  <div class="grid" id="achievements"></div>
+</div>
+
 </div>
 
 <script>
-let kiwis = 0;
-let perSecond = 0;
-let bonus = 1;
-
-let costs = {
-  u1: 10,
-  u2: 100,
-  u3: 1000
+/* ================= DADOS ================= */
+let game={
+  kiwis:0,
+  perSecond:0,
+  bonus:1,
+  upgrades:[
+    {base:10, gain:1},
+    {base:100, gain:5},
+    {base:1000, gain:25}
+  ],
+  owned:[0,0,0],
+  achievements:{},
+  last:Date.now()
 };
 
-const kiwisEl = document.getElementById("kiwis");
-const psEl = document.getElementById("ps");
+const ACHIEVEMENTS=[
+  {id:"k10", name:"10 kiwis", check:()=>game.kiwis>=10},
+  {id:"k100", name:"100 kiwis", check:()=>game.kiwis>=100},
+  {id:"ps50", name:"50/s", check:()=>game.perSecond>=50},
+  {id:"prestige", name:"Primeiro prestígio", check:()=>game.bonus>1}
+];
 
-function updateUI() {
-  kiwisEl.textContent = Math.floor(kiwis) + " kiwis";
-  psEl.textContent = (perSecond * bonus).toFixed(1) + " / segundo";
-  c1.textContent = costs.u1;
-  c2.textContent = costs.u2;
-  c3.textContent = costs.u3;
-  bonusEl.textContent = bonus.toFixed(1) + "x";
+/* ================= UI ================= */
+const kiwisEl=kiwis;
+const psEl=ps;
+const calcEl=calc;
+const achEl=achievements;
+
+function cost(i){
+  return Math.floor(game.upgrades[i].base*Math.pow(1.7,game.owned[i]));
 }
 
-click.onclick = () => {
-  kiwis += 1 * bonus;
+function updateUI(){
+  kiwisEl.textContent=Math.floor(game.kiwis)+" kiwis";
+  psEl.textContent=(game.perSecond*game.bonus).toFixed(1)+" / segundo";
+
+  game.upgrades.forEach((u,i)=>{
+    document.getElementById("c"+i).textContent=cost(i);
+  });
+
+  // calculadora
+  calcEl.innerHTML=
+    `1 min: ${(game.perSecond*60*game.bonus).toFixed(0)}<br>
+     1 hora: ${(game.perSecond*3600*game.bonus).toFixed(0)}<br>
+     1 dia: ${(game.perSecond*86400*game.bonus).toFixed(0)}`;
+
+  // conquistas
+  achEl.innerHTML="";
+  ACHIEVEMENTS.forEach(a=>{
+    if(a.check()) game.achievements[a.id]=true;
+    const div=document.createElement("div");
+    div.className="achievement"+(game.achievements[a.id]?"":" locked");
+    div.textContent=a.name;
+    achEl.appendChild(div);
+  });
+}
+
+/* ================= SISTEMAS ================= */
+click.onclick=()=>{
+  game.kiwis+=1*game.bonus;
   updateUI();
 };
 
-upgrade1.onclick = () => buy("u1", 1);
-upgrade2.onclick = () => buy("u2", 5);
-upgrade3.onclick = () => buy("u3", 25);
-
-function buy(key, value) {
-  if (kiwis >= costs[key]) {
-    kiwis -= costs[key];
-    perSecond += value;
-    costs[key] = Math.floor(costs[key] * 1.7);
+function buy(i){
+  let c=cost(i);
+  if(game.kiwis>=c){
+    game.kiwis-=c;
+    game.owned[i]++;
+    game.perSecond+=game.upgrades[i].gain;
     save();
     updateUI();
   }
 }
 
-setInterval(() => {
-  kiwis += perSecond * bonus;
-  updateUI();
-}, 1000);
-
-// PRESTÍGIO
-prestige.onclick = () => {
-  if (kiwis >= 10000) {
-    bonus += 0.5;
-    kiwis = 0;
-    perSecond = 0;
-    costs = {u1:10,u2:100,u3:1000};
+function prestige(){
+  if(game.kiwis>=10000){
+    game.bonus+=0.5;
+    game.kiwis=0;
+    game.perSecond=0;
+    game.owned=[0,0,0];
     save();
     updateUI();
   }
-};
-
-// SAVE / LOAD
-function save() {
-  localStorage.setItem("kiwiSave", JSON.stringify({
-    kiwis, perSecond, costs, bonus, last: Date.now()
-  }));
 }
 
-function load() {
-  const s = JSON.parse(localStorage.getItem("kiwiSave"));
-  if (!s) return;
-  kiwis = s.kiwis;
-  perSecond = s.perSecond;
-  costs = s.costs;
-  bonus = s.bonus;
+/* ================= LOOP ================= */
+setInterval(()=>{
+  game.kiwis+=game.perSecond*game.bonus;
+  updateUI();
+},1000);
 
-  const diff = Math.floor((Date.now() - s.last)/1000);
-  kiwis += diff * perSecond * bonus;
+/* ================= SAVE ================= */
+function save(){
+  game.last=Date.now();
+  localStorage.setItem("kiwiSave",JSON.stringify(game));
+}
+
+function load(){
+  let s=JSON.parse(localStorage.getItem("kiwiSave"));
+  if(!s) return;
+  Object.assign(game,s);
+  let diff=Math.floor((Date.now()-game.last)/1000);
+  game.kiwis+=diff*game.perSecond*game.bonus;
 }
 
 load();
 updateUI();
-setInterval(save, 5000);
+setInterval(save,5000);
 
-if ("serviceWorker" in navigator) {
+/* ================= PWA ================= */
+if("serviceWorker"in navigator){
   navigator.serviceWorker.register("sw.js");
 }
 </script>
-
 </body>
 </html>
