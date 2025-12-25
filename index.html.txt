@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Kiwi Idle</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2ecc71">
+
+<!-- iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kiwi Idle">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+body {
+  margin: 0;
+  background: #1b1b1b;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+button {
+  padding: 16px;
+  font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+<h1>🥝 Kiwi Idle</h1>
+<p id="score">0</p>
+<button onclick="clickKiwi()">Clique no Kiwi</button>
+
+<script>
+let kiwi = Number(localStorage.getItem("kiwi")) || 0;
+
+function clickKiwi(){
+  kiwi++;
+  save();
+  render();
+}
+
+function render(){
+  document.getElementById("score").innerText = kiwi + " 🥝";
+}
+
+function save(){
+  localStorage.setItem("kiwi", kiwi);
+}
+
+render();
+
+// Service Worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+</body>
+</html>
