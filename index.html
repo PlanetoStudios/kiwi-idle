@@ -7,11 +7,24 @@
 <link rel="manifest" href="manifest.json">
 
 <style>
-/* ================= VISUAL ================= */
+/* ================= TEMAS ================= */
 :root{
-  --green:#22c55e;
-  --dark:#020617;
-  --panel:rgba(15,23,42,.85);
+  --bg1:#16a34a;
+  --bg2:#022c22;
+  --panel:rgba(15,23,42,.88);
+  --accent:#22c55e;
+}
+
+[data-theme="gold"]{
+  --bg1:#facc15;
+  --bg2:#78350f;
+  --accent:#f59e0b;
+}
+
+[data-theme="dark"]{
+  --bg1:#020617;
+  --bg2:#020617;
+  --accent:#38bdf8;
 }
 
 *{box-sizing:border-box}
@@ -19,9 +32,8 @@
 body{
   margin:0;
   min-height:100vh;
-  font-family:system-ui,Arial;
-  background:
-    radial-gradient(circle at top,#16a34a,#022c22 70%);
+  font-family:system-ui;
+  background:radial-gradient(circle at top,var(--bg1),var(--bg2) 70%);
   color:#ecfdf5;
   display:flex;
   justify-content:center;
@@ -33,24 +45,13 @@ body{
   background:var(--panel);
   border-radius:24px;
   padding:18px;
-  box-shadow:0 0 60px rgba(34,197,94,.4);
+  box-shadow:0 0 60px rgba(0,0,0,.5);
 }
 
-h1{
-  margin:0 0 10px;
-  text-align:center;
-}
+h1{text-align:center;margin:0 0 6px}
 
-.stat{
-  text-align:center;
-  margin:6px 0;
-  font-size:22px;
-}
-
-.small{
-  opacity:.7;
-  font-size:14px;
-}
+.stat{text-align:center;font-size:22px}
+.small{font-size:13px;opacity:.7}
 
 button{
   width:100%;
@@ -58,77 +59,76 @@ button{
   border-radius:16px;
   padding:14px;
   margin:6px 0;
-  font-size:15px;
-  font-weight:600;
+  font-weight:700;
+  background:linear-gradient(135deg,var(--accent),#4ade80);
   cursor:pointer;
-  background:linear-gradient(135deg,#22c55e,#4ade80);
-  color:#022c22;
 }
 
-button:active{transform:scale(.96)}
+button:active{transform:scale(.94)}
 
 .section{
-  margin-top:14px;
-  padding-top:10px;
+  margin-top:12px;
+  padding-top:8px;
   border-top:1px solid rgba(255,255,255,.1);
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:6px;
+.float{
+  position:absolute;
+  pointer-events:none;
+  animation:float 1s ease-out forwards;
 }
 
-.achievement{
-  background:rgba(255,255,255,.08);
-  padding:8px;
+@keyframes float{
+  from{opacity:1;transform:translateY(0)}
+  to{opacity:0;transform:translateY(-40px)}
+}
+
+.bar{
+  height:10px;
+  background:#000;
   border-radius:10px;
-  font-size:12px;
+  overflow:hidden;
 }
 
-.locked{opacity:.4}
-
-/* calculadora */
-.calc{
-  background:rgba(0,0,0,.4);
-  padding:10px;
-  border-radius:12px;
-  font-size:13px;
-  margin-top:6px;
+.bar>div{
+  height:100%;
+  background:var(--accent);
 }
 </style>
 </head>
 
-<body>
+<body data-theme="default">
 <div class="app">
 
 <h1>🥝 Kiwi Idle</h1>
 
-<div class="stat" id="kiwis">0 kiwis</div>
-<div class="stat small" id="ps">0 / segundo</div>
+<div class="stat" id="kiwis">0</div>
+<div class="stat small" id="ps">0/s</div>
+
+<div class="stat small">
+  Nível <span id="level">1</span>
+  <div class="bar"><div id="xpbar"></div></div>
+</div>
 
 <button id="click">CLICAR NO KIWI</button>
 
 <div class="section">
   <strong>Produção</strong>
-  <button onclick="buy(0)">🌱 Plantação (+1/s)<br>Custo: <span id="c0"></span></button>
-  <button onclick="buy(1)">🏭 Fábrica (+5/s)<br>Custo: <span id="c1"></span></button>
-  <button onclick="buy(2)">🚢 Exportação (+25/s)<br>Custo: <span id="c2"></span></button>
+  <button onclick="buy(0)">🌱 Plantação</button>
+  <button onclick="buy(1)">🏭 Fábrica</button>
+  <button onclick="buy(2)">🚢 Exportação</button>
 </div>
 
 <div class="section">
-  <strong>Calculadora</strong>
-  <div class="calc" id="calc"></div>
+  <strong>Missão do Dia</strong>
+  <div id="mission"></div>
 </div>
 
 <div class="section">
-  <strong>Prestígio</strong>
-  <button onclick="prestige()">✨ Resetar para bônus permanente</button>
-</div>
-
-<div class="section">
-  <strong>Conquistas</strong>
-  <div class="grid" id="achievements"></div>
+  <strong>Temas</strong>
+  <button onclick="setTheme('default')">🌿 Padrão</button>
+  <button onclick="setTheme('gold')">🥇 Dourado</button>
+  <button onclick="setTheme('dark')">🌑 Escuro</button>
 </div>
 
 </div>
@@ -137,64 +137,48 @@ button:active{transform:scale(.96)}
 /* ================= DADOS ================= */
 let game={
   kiwis:0,
-  perSecond:0,
+  ps:0,
   bonus:1,
+  level:1,
+  xp:0,
+  xpNeed:50,
+  theme:"default",
   upgrades:[
-    {base:10, gain:1},
-    {base:100, gain:5},
-    {base:1000, gain:25}
+    {base:10,gain:1},
+    {base:100,gain:5},
+    {base:1000,gain:25}
   ],
   owned:[0,0,0],
-  achievements:{},
+  mission:null,
   last:Date.now()
 };
 
-const ACHIEVEMENTS=[
-  {id:"k10", name:"10 kiwis", check:()=>game.kiwis>=10},
-  {id:"k100", name:"100 kiwis", check:()=>game.kiwis>=100},
-  {id:"ps50", name:"50/s", check:()=>game.perSecond>=50},
-  {id:"prestige", name:"Primeiro prestígio", check:()=>game.bonus>1}
-];
-
-/* ================= UI ================= */
-const kiwisEl=kiwis;
-const psEl=ps;
-const calcEl=calc;
-const achEl=achievements;
+/* ================= UTIL ================= */
+const kiwisEl=kiwis, psEl=ps, lvlEl=level, xpbar=xpbar;
 
 function cost(i){
-  return Math.floor(game.upgrades[i].base*Math.pow(1.7,game.owned[i]));
+  return Math.floor(game.upgrades[i].base*Math.pow(1.6,game.owned[i]));
 }
 
+function totalBonus(){
+  return game.bonus*(1+game.level*0.05);
+}
+
+/* ================= UI ================= */
 function updateUI(){
   kiwisEl.textContent=Math.floor(game.kiwis)+" kiwis";
-  psEl.textContent=(game.perSecond*game.bonus).toFixed(1)+" / segundo";
-
-  game.upgrades.forEach((u,i)=>{
-    document.getElementById("c"+i).textContent=cost(i);
-  });
-
-  // calculadora
-  calcEl.innerHTML=
-    `1 min: ${(game.perSecond*60*game.bonus).toFixed(0)}<br>
-     1 hora: ${(game.perSecond*3600*game.bonus).toFixed(0)}<br>
-     1 dia: ${(game.perSecond*86400*game.bonus).toFixed(0)}`;
-
-  // conquistas
-  achEl.innerHTML="";
-  ACHIEVEMENTS.forEach(a=>{
-    if(a.check()) game.achievements[a.id]=true;
-    const div=document.createElement("div");
-    div.className="achievement"+(game.achievements[a.id]?"":" locked");
-    div.textContent=a.name;
-    achEl.appendChild(div);
-  });
+  psEl.textContent=(game.ps*totalBonus()).toFixed(1)+"/s";
+  lvlEl.textContent=game.level;
+  xpbar.style.width=(game.xp/game.xpNeed*100)+"%";
+  mission.textContent=game.mission.text;
 }
 
 /* ================= SISTEMAS ================= */
-click.onclick=()=>{
-  game.kiwis+=1*game.bonus;
-  updateUI();
+click.onclick=e=>{
+  let gain=1*totalBonus();
+  game.kiwis+=gain;
+  gainXP(1);
+  floatText("+"+gain.toFixed(0),e.clientX,e.clientY);
 };
 
 function buy(i){
@@ -202,51 +186,71 @@ function buy(i){
   if(game.kiwis>=c){
     game.kiwis-=c;
     game.owned[i]++;
-    game.perSecond+=game.upgrades[i].gain;
-    save();
-    updateUI();
+    game.ps+=game.upgrades[i].gain;
+    gainXP(5);
   }
 }
 
-function prestige(){
-  if(game.kiwis>=10000){
-    game.bonus+=0.5;
-    game.kiwis=0;
-    game.perSecond=0;
-    game.owned=[0,0,0];
-    save();
-    updateUI();
+function gainXP(v){
+  game.xp+=v;
+  if(game.xp>=game.xpNeed){
+    game.xp-=game.xpNeed;
+    game.level++;
+    game.xpNeed=Math.floor(game.xpNeed*1.4);
   }
 }
 
-/* ================= LOOP ================= */
+function floatText(t,x,y){
+  let d=document.createElement("div");
+  d.className="float";
+  d.textContent=t;
+  d.style.left=x+"px";
+  d.style.top=y+"px";
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),1000);
+}
+
+/* ================= MISSÕES ================= */
+function newMission(){
+  game.mission={
+    goal:100,
+    progress:0,
+    reward:200,
+    text:"Produza 100 kiwis"
+  };
+}
+
 setInterval(()=>{
-  game.kiwis+=game.perSecond*game.bonus;
+  game.kiwis+=game.ps*totalBonus();
+  game.mission.progress+=game.ps;
+  if(game.mission.progress>=game.mission.goal){
+    game.kiwis+=game.mission.reward;
+    newMission();
+  }
   updateUI();
 },1000);
+
+/* ================= TEMA ================= */
+function setTheme(t){
+  document.body.dataset.theme=t;
+  game.theme=t;
+}
 
 /* ================= SAVE ================= */
 function save(){
   game.last=Date.now();
   localStorage.setItem("kiwiSave",JSON.stringify(game));
 }
-
 function load(){
   let s=JSON.parse(localStorage.getItem("kiwiSave"));
   if(!s) return;
   Object.assign(game,s);
-  let diff=Math.floor((Date.now()-game.last)/1000);
-  game.kiwis+=diff*game.perSecond*game.bonus;
+  document.body.dataset.theme=game.theme;
 }
-
 load();
+newMission();
 updateUI();
 setInterval(save,5000);
-
-/* ================= PWA ================= */
-if("serviceWorker"in navigator){
-  navigator.serviceWorker.register("sw.js");
-}
 </script>
 </body>
 </html>
